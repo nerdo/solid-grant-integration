@@ -4,7 +4,6 @@ import getPrintableRequest from "~/lib/getPrintableRequest";
 
 const echo = async (event: ApiFetchEvent) => {
   const { env, params } = event
-  console.debug('echo', event)
 
   const request = await getPrintableRequest(event.request)
 
