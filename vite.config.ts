@@ -4,4 +4,7 @@ import windicss from "vite-plugin-windicss";
 
 export default defineConfig({
   plugins: [windicss(), solid({ ssr: true })],
+  envPrefix: [
+    'SERVER_',
+  ]
 });

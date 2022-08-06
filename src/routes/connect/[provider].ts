@@ -10,9 +10,11 @@ import qs from 'qs'
 
 const args = {config, session: {secret: 'graljk fsldkjf lkjsdflkjsdflkj sladkjfsdf jasfdljk'}}
 
+const grant = Grant(args.config ? args as GrantConfig : {config: args} as GrantConfig)
+
 const regex = new RegExp([
     '^',
-    '/connect',
+    grant.config.defaults.prefix,
     /(?:\/([^\/\?]+?))/.source, // /:provider
     /(?:\/([^\/\?]+?))?/.source, // /:override?
     /(?:\/$|\/?\?+.*)?$/.source, // querystring
@@ -28,7 +30,7 @@ const storage = createCookieSessionStorage({
     // secure doesn't work on localhost for Safari
     // https://web.dev/when-to-use-local-https/
     // secure: true,
-    secrets: ["hello"],
+    secrets: [sessionSecret],
     sameSite: "lax",
     path: "/",
     maxAge: 60 * 60 * 24 * 30,
@@ -52,7 +54,6 @@ const connectHandler = async (event: ApiFetchEvent) => {
 
   console.debug('current session data', currentSession.data)
 
-  const grant = Grant(args.config ? args as GrantConfig : {config: args} as GrantConfig)
   const url = new URL(request.url)
   const query = qs.parse(url.search)
   const match = regex.exec(url.pathname)
