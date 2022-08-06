@@ -1,5 +1,5 @@
-import config from "~/config/oauth"
-import { makeGrantHandler } from "~/lib/makeGrantHandler";
+import config from '~/config/oauth'
+import { makeGrantHandler } from '~/lib/makeGrantHandler'
 
 const { handler, getSession } = makeGrantHandler({ config, debug: false })
 

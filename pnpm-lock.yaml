@@ -5,6 +5,7 @@ specifiers:
   '@solidjs/router': ^0.4.2
   '@types/qs': ^6.9.7
   grant: github:simov/grant
+  prettier: ^2.7.1
   qs: ^6.11.0
   solid-js: 1.4.7
   solid-start: 0.1.0-alpha.99
@@ -23,6 +24,7 @@ dependencies:
 devDependencies:
   '@solidjs/meta': 0.28.0_solid-js@1.4.7
   '@solidjs/router': 0.4.2_solid-js@1.4.7
+  prettier: 2.7.1
   solid-js: 1.4.7
   solid-start: 0.1.0-alpha.99_qumfg53klmtpjvq4xmlsbh3yhy
   solid-start-node: 0.1.0-alpha.99_dyjmrqwkqbcqqe4l6jly7u73ou
@@ -2546,6 +2548,12 @@ packages:
       nanoid: 3.3.4
       picocolors: 1.0.0
       source-map-js: 1.0.2
+    dev: true
+
+  /prettier/2.7.1:
+    resolution: {integrity: sha512-ujppO+MkdPqoVINuDFDRLClm7D78qbDt0/NR+wp5FqEZOoTNAjPHWj17QRhu7geIHJfcNhRk1XVQmF8Bp3ye+g==}
+    engines: {node: '>=10.13.0'}
+    hasBin: true
     dev: true
 
   /qs/6.11.0:

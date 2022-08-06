@@ -1,1 +1,1 @@
-export {get} from './[provider]'
+export { get, post } from './[provider]'
