@@ -91,8 +91,7 @@ export const makeGrantHandler = (args: MakeGrantHandlerArgs) => {
     'i'
   )
 
-  const handler = async (event: ApiFetchEvent) => {
-    const { request } = event
+  const baseHandler = async (request: Request, overrides?: Partial<GrantConfig>) => {
     args.debug &&
       console.debug(
         '[GrantHandler] request',
@@ -127,6 +126,7 @@ export const makeGrantHandler = (args: MakeGrantHandlerArgs) => {
       query: query,
       body: request.body,
       session: userSession.data,
+      state: overrides
     })
 
     // clear the current session
@@ -162,8 +162,11 @@ export const makeGrantHandler = (args: MakeGrantHandlerArgs) => {
     return response
   }
 
+  const apiHandler = (event: ApiFetchEvent, config?: Partial<GrantConfig>) => baseHandler(event.request, config)
+
   return {
-    handler,
+    baseHandler,
+    apiHandler,
     getSession,
   }
 }
