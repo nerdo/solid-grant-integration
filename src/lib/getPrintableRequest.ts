@@ -1,5 +1,8 @@
+import { parse as parseQueryString } from 'qs'
+
 export const getPrintableRequest = async (r: Request) => ( {
     url: r.url,
+    searchParams: parseQueryString((new URL(r.url)).searchParams.toString()),
     redirect: r.redirect,
     body: r.body ? `${(await r.body.getReader().read()).value}` : null,
     mode: r.mode,
