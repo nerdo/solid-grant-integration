@@ -1,22 +1,16 @@
-# SolidStart
+# Integration of [simov/grant](https://github.com/simov/grant) with SolidStart
 
-Everything you need to build a Solid project, powered by [`solid-start`](https://github.com/ryansolid/solid-start/tree/master/packages/solid-start);
+Powered by [`solid-start`](https://github.com/ryansolid/solid-start/tree/master/packages/solid-start) and using [simov/grant](https://github.com/simov/grant) to adapt the authentication example to work with GitHub... but with so many services supported by [simov/grant](https://github.com/simov/grant), the sky is the limit!
 
-## Creating a project
+## Configuration
 
-```bash
-# create a new project in the current directory
-npm init solid@next
-
-# create a new project in my-app
-npm init solid@next my-app
-```
-
-> Note: the `@next` is temporary
+- Create a test GitHub application under your account here: https://github.com/settings/developers, generate a secret key for your app, and make a note of the client ID.
+- Copy `src/config/oauth.example.ts` to `src/config/oauth.ts` and edit the values you find there. Initially, it's best to just edit the key (client ID) and secret keys to test it out, but by all means, visit [simov/grant](https://github.com/simov/grant) to learn how to tinker with the configuration and use different services.
+- Copy `.env.example` to `.env` and edit any values you find there.
 
 ## Developing
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+Installed dependencies with your package manager of choice `npm install` (or `pnpm install` or `yarn`), start a development server:
 
 ```bash
 npm run dev
@@ -25,8 +19,6 @@ npm run dev
 npm run dev -- --open
 ```
 
-## Building
+## Notes
 
-Solid apps are built with _adapters_, which optimise your project for deployment to different environments.
-
-By default, `npm run build` will generate a Node app that you can run with `node build`. To use a different adapter, add it to the `devDependencies` in `package.json` and specify in your `vite.config.js`.
+This is a proof-of-concept and built on an alpha version of Solid Start.
