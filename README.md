@@ -11,11 +11,11 @@ Powered by [`solid-start`](https://github.com/ryansolid/solid-start/tree/master/
 
 Visit [simov/grant](https://github.com/simov/grant) to learn how to tinker with the configuration and use different services.
 
-You can also generate a `src/config/oauth.ts` file using the provided `src/config/oauth.example.ts`.
+The default configs are provided inline at `src/routes/connect/[provider].ts`.
 
-This method is good for experimentation but has the drawback that it will not be included in the repository so deployment needs another solution.
+You could choose to change the defaults inline or dynamically `import()` them from somewhere external (json? some API? who knows? ... well, you should lol).
 
-Ideally, you will want to update the default configs provided inline at `src/routes/connect/[provider].ts`. You can also choose to dynamically load some external json config here instead of `src/config/oauth.ts` from the codebase, but ideally, you should configure all your default oauth settings and where client keys are needed, import them from environment variables for a secure, deployable configuration.
+Once you've got all your default oauth settings here, secrets like app client IDs and secret tokens should be imported from environment variables for a secure, deployable configuration.
 
 ## Developing
 

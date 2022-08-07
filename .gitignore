@@ -10,7 +10,6 @@ netlify
 .env
 .env.*
 !.env.example
-src/config/oauth.ts
 
 # dependencies
 /node_modules
