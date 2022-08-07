@@ -1,4 +1,9 @@
-let users = [{ id: 0, username: 'kody', password: 'twixrox' }]
+let users: {
+  id: number
+  username: string
+  password: string
+  metadata?: Record<string, any>
+}[] = [{ id: 0, username: 'kody', password: 'twixrox' }]
 export const db = {
   user: {
     async create({ data }) {

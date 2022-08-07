@@ -6,9 +6,9 @@ type LoginForm = {
   password: string
 }
 
-export async function register({ username, password }: LoginForm) {
+export async function register({ username, password }: LoginForm, metadata?: Record<string, any>) {
   return db.user.create({
-    data: { username: username, password },
+    data: { username: username, password, metadata },
   })
 }
 

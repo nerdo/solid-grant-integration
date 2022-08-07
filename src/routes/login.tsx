@@ -1,13 +1,9 @@
 import {
-  NavigateOptions,
-  useLocation,
-  useNavigate,
   useParams,
   useRouteData,
 } from '@solidjs/router'
 import {
   createEffect,
-  createResource,
   createSignal,
   Match,
   Show,
@@ -100,40 +96,19 @@ const fetchGitHubUser = async (accessToken: string) => {
   return (await response.json()) as GitHubUserResponse
 }
 
-const loginGitHubUser = async (gh: GitHubUserResponse) => {
-  const username = gh.login
+const loginGitHubUser = async (username: string, metadata?: Record<string, any>) => {
   const userExists = await db.user.findUnique({ where: { username } })
-  console.debug('user exists', userExists)
   const user = userExists
     ? userExists
     : await register({
         username,
         password: 'how now brown cow pass word bird chow',
-      })
-  console.debug('user', user)
+      }, metadata)
   return await createUserSession(`${user.id}`, '/')
-}
-
-const maybeDoGitHubLogin = async (request: Request) => {
-  if (request.url.search) {
-    // Check to see if there's a GitHub access token on the query string
-    // If so, try and use it to get the user's information from GitHub...
-    const q = getQueryParams(request.url)
-    if (q.access_token) {
-      const gh = await fetchGitHubUser(q.access_token)
-      if (gh && gh.login) {
-        const redirectToSetCookie = await loginGitHubUser(gh)
-        if (redirectToSetCookie) {
-          throw redirectToSetCookie
-        }
-      }
-    }
-  }
 }
 
 export function routeData() {
   return createServerData(async (_, { request }) => {
-    await maybeDoGitHubLogin(request)
     if (await getUser(request)) {
       throw redirect('/')
     }
@@ -155,10 +130,29 @@ export default function Login() {
 
   const [queryParams, setQueryParams] = createSignal<Record<string, any>>()
 
-  createEffect(() => {
-    if (location.search) {
-      setQueryParams(getQueryParams(location.search))
+  const ghLoginAction = createServerAction(async (form: FormData) => {
+    const ghat = form.get('ghat')
+    if (typeof ghat !== 'string') {
+      throw new FormError('Invalid Login!')
     }
+
+    const gh = await fetchGitHubUser(ghat)
+    if (!gh || !gh.login) {
+      throw new FormError('Invalid Login!')
+    }
+
+    return await loginGitHubUser(gh.login, gh)
+  })
+
+  createEffect(async () => {
+    if (!location.search) return
+    const q = getQueryParams(location.search)
+    if (q.access_token) {
+      const form = new FormData()
+      form.set('ghat', q.access_token)
+      await ghLoginAction.submit(form)
+    }
+    setQueryParams(q)
   })
 
   createEffect(() => {
@@ -245,13 +239,17 @@ export default function Login() {
           <Show when={grantError()}>
             {(error) => (
               <div class="flex flex-col p-10 bg-red-500 text-red-50 rounded-md">
-                <div class='text-lg font-bold text-white'>{error.message}</div>
+                <div class="text-lg font-bold text-white">{error.message}</div>
                 <Show when={error.description}>
                   <div>{error.description}</div>
                 </Show>
                 <Show when={error.uri}>
-                  <div class='bg-red-600 mt-5 rounded-md'>
-                    <a class='inline-block text-center w-full' target="_blank" href={error.uri}>
+                  <div class="bg-red-600 mt-5 rounded-md">
+                    <a
+                      class="inline-block text-center w-full"
+                      target="_blank"
+                      href={error.uri}
+                    >
                       click for more details...
                     </a>
                   </div>
@@ -346,21 +344,33 @@ export default function Login() {
               </loginAction.Form>
             </Match>
             <Match when={authSource() === 'github'}>
-              <div class="min-w-64 mx-auto max-w-70 min-h-24">
-                <img
-                  src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"
-                  alt="GitHub"
-                  class="w-full cursor-pointer"
-                  onClick={() => startGithubLogin()}
+              <ghLoginAction.Form method="post">
+                <input
+                  type="hidden"
+                  name="redirectTo"
+                  value={params.redirectTo ?? '/'}
                 />
-                <button
-                  class="w-full focus:bg-white hover:bg-white bg-gray-300 rounded-b-md px-2"
-                  type="submit"
-                  onClick={() => startGithubLogin()}
-                >
-                  {data() ? 'Login' : ''}
-                </button>
-              </div>
+                <div class="min-w-64 mx-auto max-w-70 min-h-24">
+                  <img
+                    src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"
+                    alt="GitHub"
+                    class="w-full cursor-pointer"
+                    onClick={() => startGithubLogin()}
+                  />
+                  <button
+                    class="w-full focus:bg-white hover:bg-white bg-gray-300 rounded-b-md px-2"
+                    type="submit"
+                    onClick={() => startGithubLogin()}
+                  >
+                    {data() ? 'Login' : ''}
+                  </button>
+                  <Show when={ghLoginAction.error}>
+                    <p class="text-red-400" role="alert" id="error-message">
+                      {ghLoginAction.error.message}
+                    </p>
+                  </Show>
+                </div>
+              </ghLoginAction.Form>
             </Match>
           </Switch>
         </main>
