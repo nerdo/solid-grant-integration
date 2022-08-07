@@ -5,6 +5,7 @@ import { createCookieSessionStorage } from 'solid-start/session'
 import Grant from 'grant/lib/grant'
 import { parse as parseQueryString } from 'qs'
 import getPrintableRequest from './getPrintableRequest'
+import { useGrant } from './grant'
 
 export interface SessionOptions {
   name?: string
@@ -60,15 +61,16 @@ export const makeGrantHandler = (args: MakeGrantHandlerArgs) => {
   args.debug &&
     console.debug('[GrantHandler] args', JSON.stringify(args, null, 2))
 
+  const grantApi = useGrant()
+
   const grant = Grant({ config })
 
   const storage = createCookieSessionStorage({
     cookie: {
       name: sessionName,
       // secure doesn't work on localhost for Safari,
-      // and seems like it doesn't work on Chrome either?
       // https://web.dev/when-to-use-local-https/
-      // secure: true,
+      secure: true,
       secrets: [sessionSecret],
       sameSite: 'lax',
       path: '/',
@@ -91,7 +93,10 @@ export const makeGrantHandler = (args: MakeGrantHandlerArgs) => {
     'i'
   )
 
-  const baseHandler = async (request: Request, overrides?: Partial<GrantConfig>) => {
+  const baseHandler = async (
+    request: Request,
+    overrides?: Partial<GrantConfig>
+  ) => {
     args.debug &&
       console.debug(
         '[GrantHandler] request',
@@ -126,7 +131,7 @@ export const makeGrantHandler = (args: MakeGrantHandlerArgs) => {
       query: query,
       body: request.body,
       session: userSession.data,
-      state: overrides
+      state: overrides,
     })
 
     // clear the current session
@@ -153,6 +158,11 @@ export const makeGrantHandler = (args: MakeGrantHandlerArgs) => {
       }
     }
 
+    const grantResponse = userSession.get('response')
+    if (override === 'callback' && grantResponse) {
+      grantApi.set(grantResponse)
+    }
+
     const response = location
       ? redirect(location, { headers })
       : new Response(null, { headers })
@@ -162,7 +172,8 @@ export const makeGrantHandler = (args: MakeGrantHandlerArgs) => {
     return response
   }
 
-  const apiHandler = (event: ApiFetchEvent, config?: Partial<GrantConfig>) => baseHandler(event.request, config)
+  const apiHandler = (event: ApiFetchEvent, config?: Partial<GrantConfig>) =>
+    baseHandler(event.request, config)
 
   return {
     baseHandler,

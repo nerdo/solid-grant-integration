@@ -10,6 +10,7 @@ import {
   Routes,
   Scripts,
 } from 'solid-start'
+import { GrantProvider } from '~/lib/grant'
 import 'virtual:windi.css'
 
 export default function Root() {
@@ -21,11 +22,13 @@ export default function Root() {
       </Head>
       <Body>
         <ErrorBoundary>
-          <Suspense fallback={<div>Loading</div>}>
-            <Routes>
-              <FileRoutes />
-            </Routes>
-          </Suspense>
+          <GrantProvider>
+            <Suspense fallback={<div>Loading</div>}>
+              <Routes>
+                <FileRoutes />
+              </Routes>
+            </Suspense>
+          </GrantProvider>
         </ErrorBoundary>
         <Scripts />
       </Body>
