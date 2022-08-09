@@ -1,10 +1,15 @@
-import solid from "solid-start/vite";
-import { defineConfig } from "vite";
-import windicss from "vite-plugin-windicss";
+import solid from 'solid-start/vite'
+import { defineConfig } from 'vite'
+import windicss from 'vite-plugin-windicss'
+import vercel from 'solid-start-vercel'
+
+let adapter: ReturnType<typeof vercel>
+
+if (process.env.CLOUD_SERVICE_NAME === 'vercel')  {
+  adapter = vercel()
+}
 
 export default defineConfig({
-  plugins: [windicss(), solid({ ssr: true })],
-  envPrefix: [
-    'SERVER_',
-  ]
-});
+  plugins: [windicss(), solid({ ssr: true, adapter })],
+  envPrefix: ['SERVER_'],
+})
