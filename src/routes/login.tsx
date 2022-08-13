@@ -1,22 +1,19 @@
-import {
-  useParams,
-  useRouteData,
-} from '@solidjs/router'
-import {
-  createEffect,
-  createSignal,
-  Match,
-  Show,
-  Switch,
-} from 'solid-js'
+import { useNavigate, useParams, useRouteData } from '@solidjs/router'
+import { createEffect, createSignal, Match, Show, Switch } from 'solid-js'
 import { FormError } from 'solid-start/data'
-import {
+import server, {
   createServerAction,
   createServerData,
   redirect,
 } from 'solid-start/server'
 import { db } from '~/db'
-import { createUserSession, getUser, login, register } from '~/db/session'
+import {
+  createUserSession,
+  getUser,
+  login,
+  logout,
+  register,
+} from '~/db/session'
 
 // definitely NOT fully typed... just a quick and dirty
 // conversion from a sample response to test TS in this
@@ -89,29 +86,43 @@ const getQueryParams = (url: string) => {
   return q
 }
 
-const fetchGitHubUser = async (accessToken: string) => {
+const fetchGitHubUser = server(async (accessToken: string) => {
   const response = await fetch('https://api.github.com/user', {
     headers: { Authorization: `token ${accessToken}` },
   })
   return (await response.json()) as GitHubUserResponse
-}
+})
 
-const loginGitHubUser = async (username: string, metadata?: Record<string, any>) => {
+/**
+ * @return string the Set-Cookie value that results in the user logging in
+ * @throws an error if something went wrong
+ */
+const loginGitHubUser = async (
+  username: string,
+  metadata?: Record<string, any>
+) => {
   const userExists = await db.user.findUnique({ where: { username } })
   const user = userExists
     ? userExists
-    : await register({
-        username,
-        password: 'how now brown cow pass word bird chow',
-      }, metadata)
-  return await createUserSession(`${user.id}`, '/')
+    : await register(
+        {
+          username,
+          password: 'how now brown cow pass word bird chow',
+        },
+        metadata
+      )
+
+  return await createUserSession(`${user.id}`)
 }
 
 export function routeData() {
   return createServerData(async (_, { request }) => {
-    if (await getUser(request)) {
-      throw redirect('/')
-    }
+    // Try to authenticate when the route is hit...
+    try {
+      if (await getUser(request)) {
+        return redirect('/')
+      }
+    } catch (error) {}
     return {}
   })
 }
@@ -144,13 +155,37 @@ export default function Login() {
     return await loginGitHubUser(gh.login, gh)
   })
 
+  const ghLogin = server(async (ghAccessToken: string) => {
+    const getLoginSessionCookie = async (ghAccessToken: string) => {
+      const gh = await fetchGitHubUser(ghAccessToken)
+      if (!gh || !gh.login) {
+        return new Error('Invalid Login!')
+      }
+
+      return await loginGitHubUser(gh.login, gh)
+    }
+
+    const loginSessionCookie = await getLoginSessionCookie(ghAccessToken)
+
+    if (loginSessionCookie instanceof Error) {
+      throw loginSessionCookie
+    }
+
+    return new Response(null, {
+      headers: {
+        'Set-Cookie': loginSessionCookie,
+      },
+    })
+  })
+
   createEffect(async () => {
     if (!location.search) return
     const q = getQueryParams(location.search)
     if (q.access_token) {
-      const form = new FormData()
-      form.set('ghat', q.access_token)
-      await ghLoginAction.submit(form)
+      const response = await ghLogin(q.access_token)
+      if (response.ok) {
+        navigate('/')
+      }
     }
     setQueryParams(q)
   })
@@ -168,11 +203,7 @@ export default function Login() {
     }
   })
 
-  // hmm, do we need an option to force a msr style redirect?
-  // should solid just know that this endpoint is an api endpoint?
-  // navigate() doesn't work...
-  // const navigate = useNavigate()
-  // const startGithubLogin = () => navigate('/connect/github')
+  const navigate = useNavigate()
   const startGithubLogin = () => (window.location.href = '/connect/github')
 
   const loginAction = createServerAction(async (form: FormData) => {
@@ -206,7 +237,11 @@ export default function Login() {
             fields,
           })
         }
-        return createUserSession(`${user.id}`, redirectTo)
+        return redirect(redirectTo, {
+          headers: {
+            'Set-Cookie': await createUserSession(`${user.id}`),
+          },
+        })
       }
       case 'register': {
         const userExists = await db.user.findUnique({ where: { username } })
@@ -224,7 +259,11 @@ export default function Login() {
             }
           )
         }
-        return createUserSession(`${user.id}`, redirectTo)
+        return redirect(redirectTo, {
+          headers: {
+            'Set-Cookie': await createUserSession(`${user.id}`),
+          },
+        })
       }
       default: {
         throw new FormError(`Login type invalid`, { fields })
@@ -307,6 +346,7 @@ export default function Login() {
                   <label for="username-input">Username</label>
                   <input
                     name="username"
+                    autocomplete="username"
                     placeholder="kody"
                     class="border-gray-700 border-2 ml-2 rounded-md px-2"
                   />
@@ -321,6 +361,7 @@ export default function Login() {
                   <input
                     name="password"
                     type="password"
+                    autocomplete="current-password"
                     placeholder="twixrox"
                     class="border-gray-700 border-2 ml-2 rounded-md px-2"
                   />

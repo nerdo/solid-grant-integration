@@ -9,23 +9,27 @@ import { getUser, logout } from '~/db/session'
 
 export function routeData() {
   return createServerData(async (_, { request }) => {
-    const user = await getUser(request)
-
-    if (!user) {
+    try {
+      return await getUser(request)
+    } catch {
       throw redirect('/login')
     }
-
-    return user
   })
 }
 
 export default function Home() {
   const user = useRouteData<typeof routeData>()
-  const logoutAction = createServerAction((_, { request }) => logout(request))
+  const logoutAction = createServerAction(async (_, { request }) =>
+    redirect('/login', {
+      headers: {
+        'Set-Cookie': await logout(request),
+      },
+    })
+  )
 
   return (
     <main class="w-full p-4 space-y-2">
-      <div class='w-full flex items-center'>
+      <div class="w-full flex items-center">
         <Show when={user()?.metadata?.avatar_url}>
           {(avatarUrl) => (
             <img

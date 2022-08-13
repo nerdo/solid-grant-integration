@@ -6,7 +6,10 @@ type LoginForm = {
   password: string
 }
 
-export async function register({ username, password }: LoginForm, metadata?: Record<string, any>) {
+export async function register(
+  { username, password }: LoginForm,
+  metadata?: Record<string, any>
+) {
   return db.user.create({
     data: { username: username, password, metadata },
   })
@@ -36,6 +39,17 @@ const storage = createCookieSessionStorage({
   },
 })
 
+// I realize that I struggled to re-use this code for oauth because they threw redirects.
+// I also wanted to make it clear that the values being returned are
+// Set-Cookie header values, hence this type and the explicit type setting.
+export type SetCookieHeaderValue = string
+
+export class AuthenticationError extends Error {}
+
+export class InvalidUserError extends AuthenticationError {}
+
+export class UserNotFoundError extends AuthenticationError {}
+
 export function getUserSession(request: Request) {
   return storage.getSession(request.headers.get('Cookie'))
 }
@@ -43,52 +57,38 @@ export function getUserSession(request: Request) {
 export async function getUserId(request: Request) {
   const session = await getUserSession(request)
   const userId = session.get('userId')
-  if (!userId || typeof userId !== 'string') return null
+  if (typeof userId !== 'string') throw new InvalidUserError()
   return userId
 }
 
-export async function requireUserId(
-  request: Request,
-  redirectTo: string = new URL(request.url).pathname
-) {
+export async function requireUserId(request: Request) {
   const session = await getUserSession(request)
   const userId = session.get('userId')
-  if (!userId || typeof userId !== 'string') {
-    const searchParams = new URLSearchParams([['redirectTo', redirectTo]])
-    throw redirect(`/login?${searchParams}`)
+  if (typeof userId !== 'string') {
+    throw new InvalidUserError('Invalid user ID')
   }
   return userId
 }
 
 export async function getUser(request: Request) {
   const userId = await getUserId(request)
-  if (typeof userId !== 'string') {
-    return null
-  }
-
   try {
     const user = await db.user.findUnique({ where: { id: Number(userId) } })
     return user
   } catch {
-    throw logout(request)
+    throw new UserNotFoundError(`Unable to find user ID ${userId}`)
   }
 }
 
-export async function logout(request: Request) {
+export async function logout(request: Request): Promise<SetCookieHeaderValue> {
   const session = await storage.getSession(request.headers.get('Cookie'))
-  return redirect('/login', {
-    headers: {
-      'Set-Cookie': await storage.destroySession(session),
-    },
-  })
+  return await storage.destroySession(session)
 }
 
-export async function createUserSession(userId: string, redirectTo: string) {
+export async function createUserSession(
+  userId: string
+): Promise<SetCookieHeaderValue> {
   const session = await storage.getSession()
   session.set('userId', userId)
-  return redirect(redirectTo, {
-    headers: {
-      'Set-Cookie': await storage.commitSession(session),
-    },
-  })
+  return await storage.commitSession(session)
 }
