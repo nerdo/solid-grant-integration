@@ -11,7 +11,6 @@ import {
   createUserSession,
   getUser,
   login,
-  logout,
   register,
 } from '~/db/session'
 
