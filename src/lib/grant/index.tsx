@@ -9,6 +9,10 @@ import {
 
 export type GrantData = Record<string, any>
 
+export { makeGrantHandler } from './makeGrantHandler'
+
+export { getPrintableRequest } from './getPrintableRequest'
+
 export interface GrantApi {
   get: Accessor<GrantData>
   set: (v: GrantData) => any

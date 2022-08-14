@@ -1,7 +1,6 @@
 import { ApiFetchEvent } from 'solid-start/api/types'
 import { json } from 'solid-start/server'
-import getPrintableRequest from '~/lib/getPrintableRequest'
-import { useGrant } from '~/lib/grant'
+import { useGrant, getPrintableRequest } from '~/lib/grant'
 
 const echo = async (event: ApiFetchEvent) => {
   const { env, params } = event

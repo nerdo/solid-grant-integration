@@ -1,4 +1,4 @@
-import { makeGrantHandler } from '~/lib/makeGrantHandler'
+import { makeGrantHandler } from '~/lib/grant'
 
 const { apiHandler, getSession } = makeGrantHandler({
   debug: false,
